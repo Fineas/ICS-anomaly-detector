@@ -4,6 +4,7 @@ import datetime
 import random
 import torch
 import time
+import json
 from torch.utils.data import DataLoader, TensorDataset
 
 #############################################
@@ -68,10 +69,6 @@ class Traffic:
         self.classifier = classifier
 
     def simulate(self, delay=1, event_callback=None):
-        """
-        Run simulation in an infinite loop. For every communication event, classify it
-        using the provided neural network model (if any) and send an event via event_callback.
-        """
         try:
             while True:
                 active_plcs = [plc for plc in self.plcs.values() if plc.active]
@@ -81,7 +78,7 @@ class Traffic:
                     time.sleep(delay)
                     continue
 
-                # Randomly select a sender and a receiver (ensuring they are not the same)
+                # randomly select a sender and a receiver
                 sender = random.choice(active_plcs)
                 receiver = random.choice(active_plcs)
                 while sender.id == receiver.id:
@@ -93,7 +90,7 @@ class Traffic:
                 if message:
                     receiver.receive(message, timestamp)
 
-                    # Build features: normalized hour, normalized source, normalized destination, normalized data.
+                    # features: normalized hour, normalized source, normalized destination, normalized data.
                     current_hour = datetime.datetime.fromtimestamp(timestamp).hour
                     features = [
                         current_hour / 23.0,       # normalized hour
@@ -128,23 +125,15 @@ class Traffic:
                 event_callback({"event": "stopped", "message": "Simulation stopped by user."})
 
     def trigger_anomaly(self, event_callback=None):
-        """
-        Activate PLC-4 to simulate an anomalous behavior.
-        """
         plc4 = self.plcs.get(4)
         if plc4:
-            plc4.active = True  # Activate PLC-4.
+            plc4.active = True  # activate PLC-4 to simulate an anomalous behavior
             print(f"\n--- Incident Triggered: {plc4.name} is now active and participating in the network! ---\n")
         else:
             print("PLC-4 not found in the network.")
 
 
 def create_traffic_simulator(classifier=None):
-    """
-    Helper function to create and return a Traffic simulator with four PLC devices.
-    PLC-1, PLC-2, and PLC-3 are active by default while PLC-4 is inactive.
-    Optionally, a trained classifier can be provided.
-    """
     plc1 = PLC(id=1, name="PLC-1", active=True)
     plc2 = PLC(id=2, name="PLC-2", active=True)
     plc3 = PLC(id=3, name="PLC-3", active=True)
@@ -253,6 +242,10 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, epochs=50
 def main():
     # ===== Generate Dataset =====
     dataset = generate_dataset()
+    # store the dataset in a json file, locally
+    with open("dataset.json", "w") as f:
+        json.dump(dataset, f)
+    
     features, labels = prepare_data(dataset)
     num_samples = features.shape[0]
     indices = list(range(num_samples))
@@ -296,10 +289,8 @@ def main():
         print("Event Callback:", event)
 
     print("\nSimulating 10 events with classification...\n")
-    # Simulate a few events (instead of an infinite loop)
     for _ in range(10):
         active_plcs = [plc for plc in traffic.plcs.values() if plc.active]
-        # If not enough active PLCs, activate all.
         if len(active_plcs) < 2:
             for plc in traffic.plcs.values():
                 plc.active = True
