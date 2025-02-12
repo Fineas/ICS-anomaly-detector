@@ -1,9 +1,10 @@
 from flask import Flask, render_template, Response, request, jsonify
-from flask_cors import CORS  # Import the extension
+from flask_cors import CORS
 import threading
 import json
 from queue import Queue
-from simulator import create_traffic_simulator
+import torch
+from simulator import create_traffic_simulator, AnomalyClassifier
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
@@ -14,8 +15,14 @@ event_queue = Queue()
 def event_callback(event):
     event_queue.put(event)
 
-# Create our traffic simulator instance
-traffic = create_traffic_simulator()
+# Load the classifier from disk.
+input_dim = 4
+classifier_model = AnomalyClassifier(input_dim)
+classifier_model.load_state_dict(torch.load("./anomaly_model.pth", map_location=torch.device('cpu')))
+classifier_model.eval()
+
+# Create our traffic simulator instance with the classifier.
+traffic = create_traffic_simulator(classifier=classifier_model)
 
 def simulation_thread():
     traffic.simulate(delay=1, event_callback=event_callback)
