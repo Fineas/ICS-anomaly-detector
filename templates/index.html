@@ -28,7 +28,7 @@
             top: 10px;
             left: 50%;
             transform: translateX(-50%);
-            padding: 10px;
+            padding: 13px 20px;
             background-color: red;
             color: white;
             font-weight: bold;
@@ -37,10 +37,18 @@
         /* Anomaly trigger button */
         #anomalyBtn {
             position: fixed;
+            left: 10px;
+            top: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+        #emergencyBtn {
+            position: fixed;
             top: 10px;
             right: 10px;
             padding: 10px 20px;
             font-size: 16px;
+            background-color: #f58888;
         }
         /* SVG overlay for drawing animations */
         #svgOverlay {
@@ -53,14 +61,19 @@
         }
         #table-container {
             max-height: 300px;
+            margin-top: -60px;
         }
         .center-container {
             position: relative;
             width: 100%;
             height: 100%;
+            margin-top: -40px;
         }
         .center-container .plc {
             position: absolute;
+        }
+        .container {
+            margin-top: 6%;
         }
     </style>
         <link
@@ -73,8 +86,10 @@
 <body>
 
     <div class="container">
+        <center><h1>Industrial Control System - Simulator</h1></center>
         <div class="d-flex" style="height: 500px;">
             <button id="anomalyBtn">Trigger Anomaly</button>
+            <button id="emergencyBtn">Emergency STOP</button>
             <div class="center-container">
                 <div id="warning">Anomaly Detected!</div>
 
@@ -119,7 +134,6 @@
     </div>
 
     <script>
-        // Connect to the SSE stream provided by the Flask app.
         var id = 0;
         var evtSource = new EventSource("/stream");
         evtSource.onmessage = function(e) {
@@ -127,7 +141,7 @@
             console.log("Received event:", event);
 
             if (event.event === "anomaly") {
-                animateMessage(event.sender, event.receiver);
+                animateMessage(event.sender, event.receiver, "red");
                 showWarning(event.message);
                 
                 var table = document.querySelector("table tbody");
@@ -154,7 +168,9 @@
 
                 id++;
             }
-            // Additional event types (e.g., "waiting" or "stopped") can be handled here.
+            else {
+                animateMessage(event.sender, event.receiver, "blue");
+            }
         };
 
         // Helper function: returns the center point (x,y) of a DOM element.
@@ -167,7 +183,7 @@
         }
 
         // Animate a “packet” traveling from sender to receiver.
-        function animateMessage(senderName, receiverName) {
+        function animateMessage(senderName, receiverName, color) {
             // Convert names like "PLC-1" to corresponding element IDs ("plc-1")
             var senderElem = document.getElementById(senderName.toLowerCase());
             var receiverElem = document.getElementById(receiverName.toLowerCase());
@@ -199,7 +215,7 @@
             line.setAttribute("y1", start.y);
             line.setAttribute("x2", start.x);
             line.setAttribute("y2", start.y);
-            line.setAttribute("style", "stroke:red;stroke-width:3;z-index:0");
+            line.setAttribute("style", "stroke:"+color+";stroke-width:3;z-index:0");
             svg.appendChild(line);
 
             // Animate the line extending to the end point.
@@ -241,6 +257,13 @@
         // Handle the anomaly trigger button.
         document.getElementById("anomalyBtn").addEventListener("click", function() {
             fetch("/trigger_anomaly", { method: "POST" })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data);
+                });
+        });
+        document.getElementById("emergencyBtn").addEventListener("click", function() {
+            fetch("/emergency_stop", { method: "POST" })
                 .then(response => response.json())
                 .then(data => {
                     console.log(data);

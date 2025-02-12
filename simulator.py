@@ -7,6 +7,8 @@ import time
 import json
 from torch.utils.data import DataLoader, TensorDataset
 
+emergency = False
+
 #############################################
 # Simulation of Programmable Logic Controller
 #############################################
@@ -69,8 +71,9 @@ class Traffic:
         self.classifier = classifier
 
     def simulate(self, delay=1, event_callback=None):
+        global emergency
         try:
-            while True:
+            while not emergency:
                 active_plcs = [plc for plc in self.plcs.values() if plc.active]
                 if len(active_plcs) < 2:
                     if event_callback:
@@ -145,7 +148,11 @@ class Traffic:
                 event_callback(event)
         else:
             print("PLC-4 not found in the network.")
-
+    
+    def emergency_stop(self, event_callback=None):
+        global emergency
+        emergency = True
+            
 
 def create_traffic_simulator(classifier=None):
     plc1 = PLC(id=1, name="PLC-1", active=True)

@@ -47,5 +47,10 @@ def trigger_anomaly():
     traffic.trigger_anomaly(event_callback=event_callback)
     return jsonify({"status": "Anomaly triggered"})
 
+@app.route('/emergency_stop', methods=['POST'])
+def emergency_stop():
+    traffic.emergency_stop(event_callback=event_callback)
+    return jsonify({"status": "Emergency stop triggered"})
+
 if __name__ == '__main__':
     app.run(debug=True, threaded=True)
