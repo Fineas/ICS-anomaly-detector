@@ -115,7 +115,8 @@ class Traffic:
                         "receiver": receiver.name,
                         "data": data,
                         "timestamp": timestamp,
-                        "prediction": prediction
+                        "prediction": prediction,
+                        "message": f"Anomaly triggered between {sender.name} and {receiver.name}"
                     }
                     if event_callback:
                         event_callback(event)
@@ -129,6 +130,19 @@ class Traffic:
         if plc4:
             plc4.active = True  # activate PLC-4 to simulate an anomalous behavior
             print(f"\n--- Incident Triggered: {plc4.name} is now active and participating in the network! ---\n")
+
+            plc1 = self.plcs.get(1)
+            event = {
+                "event": 'anomaly',
+                "sender": plc4.name,
+                "receiver": plc1.name,
+                "data": 'sample',
+                "timestamp": 0,
+                "prediction": 0.5,
+                "message": "Anomaly triggered by user."
+            }
+            if event_callback:
+                event_callback(event)
         else:
             print("PLC-4 not found in the network.")
 
