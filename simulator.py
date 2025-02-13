@@ -173,7 +173,7 @@ def generate_dataset():
                 for dest in range(1, 5):
                     if source == dest:
                         continue
-                    data = random.randint(1, 256)
+                    data = i
                     # Label as anomaly if PLC4 is involved and hour is between 7 and 21.
                     if (source == 4 or dest == 4) and (current_hour >= 7 and current_hour < 21):
                         label = 1
