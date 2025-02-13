@@ -70,7 +70,7 @@ class Traffic:
         # Optional PyTorch classifier model (if provided)
         self.classifier = classifier
 
-    def simulate(self, delay=1, event_callback=None):
+    def simulate(self, delay=2, event_callback=None):
         global emergency
         try:
             while not emergency:
@@ -133,19 +133,6 @@ class Traffic:
         if plc4:
             plc4.active = True  # activate PLC-4 to simulate an anomalous behavior
             print(f"\n--- Incident Triggered: {plc4.name} is now active and participating in the network! ---\n")
-
-            plc1 = self.plcs.get(1)
-            event = {
-                "event": 'anomaly',
-                "sender": plc4.name,
-                "receiver": plc1.name,
-                "data": 'sample',
-                "timestamp": 0,
-                "prediction": 0.5,
-                "message": "Anomaly triggered by user."
-            }
-            if event_callback:
-                event_callback(event)
         else:
             print("PLC-4 not found in the network.")
     
@@ -178,21 +165,22 @@ def generate_dataset():
     """
     dataset = []
     base_time = datetime.datetime(2021, 1, 1, 0, 0, 0).timestamp()
-    for hour in range(24):
-        timestamp = base_time + hour * 3600
-        current_hour = datetime.datetime.fromtimestamp(timestamp).hour
-        for source in range(1, 5):
-            for dest in range(1, 5):
-                if source == dest:
-                    continue
-                data = random.randint(1, 100)
-                # Label as anomaly if PLC4 is involved and hour is between 7 and 21.
-                if (source == 4 or dest == 4) and (current_hour >= 7 and current_hour < 21):
-                    label = 1
-                else:
-                    label = 0
-                features = [current_hour / 23.0, (source - 1) / 3.0, (dest - 1) / 3.0, data / 100.0]
-                dataset.append((features, label))
+    for i in range(256):
+        for hour in range(24):
+            timestamp = base_time + hour * 3600
+            current_hour = datetime.datetime.fromtimestamp(timestamp).hour
+            for source in range(1, 5):
+                for dest in range(1, 5):
+                    if source == dest:
+                        continue
+                    data = random.randint(1, 256)
+                    # Label as anomaly if PLC4 is involved and hour is between 7 and 21.
+                    if (source == 4 or dest == 4) and (current_hour >= 7 and current_hour < 21):
+                        label = 1
+                    else:
+                        label = 0
+                    features = [current_hour / 23.0, (source - 1) / 3.0, (dest - 1) / 3.0, data / 100.0]
+                    dataset.append((features, label))
     return dataset
 
 
